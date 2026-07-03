@@ -49,9 +49,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
 
           <footer className="border-t border-secondary-200 bg-white">
-            <div className="mx-auto max-w-7xl px-4 py-5 text-xs text-secondary-400 sm:px-6 lg:px-8">
-              Catalogue is served from an in-memory repository — changes last until the server
-              restarts.
+            <div className="mx-auto max-w-7xl px-4 py-5 text-xs text-secondary-500 sm:px-6 lg:px-8">
+              Demo catalogue held in this browser tab. Edits carry across pages and reset when
+              the page is reloaded.
             </div>
           </footer>
         </div>
