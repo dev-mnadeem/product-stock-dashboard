@@ -87,8 +87,8 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
 
   return (
     <section className="surface p-4" aria-label="Inventory filters">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end">
-        <div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end">
+        <div className="col-span-2 sm:col-span-1">
           <label htmlFor="category-filter" className="field-label mb-1">
             Category
           </label>
@@ -139,7 +139,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
           />
         </div>
 
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <label htmlFor="stock-filter" className="field-label mb-1">
             Availability
           </label>
@@ -159,7 +159,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
           type="button"
           onClick={handleReset}
           aria-label="Reset all product filters"
-          className="rounded-lg border border-secondary-300 bg-white px-4 py-2 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-100"
+          className="col-span-2 rounded-lg border border-secondary-300 bg-white px-4 py-2 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-100 sm:col-span-1"
         >
           Reset
         </button>

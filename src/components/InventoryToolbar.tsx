@@ -56,7 +56,7 @@ export function InventoryToolbar({
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-500"
           >
             <circle cx="11" cy="11" r="7" />
             <path strokeLinecap="round" d="m20 20-3.5-3.5" />
@@ -113,7 +113,7 @@ export function InventoryToolbar({
             aria-pressed={view === mode}
             className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
               view === mode
-                ? 'bg-primary-500 text-white'
+                ? 'bg-primary-700 text-white'
                 : 'text-secondary-600 hover:bg-secondary-100'
             }`}
           >

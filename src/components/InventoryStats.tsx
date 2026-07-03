@@ -38,17 +38,20 @@ export function InventoryStats({ summary }: InventoryStatsProps) {
       label: 'Stock value',
       value: summary ? formatCompactPrice(summary.stockValue) : '—',
       tone: 'text-primary-700',
+      span: 'col-span-2 sm:col-span-1',
     },
   ]
 
   return (
     <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {tiles.map((tile) => (
-        <div key={tile.label} className={TILE}>
+        <div key={tile.label} className={`${TILE} ${'span' in tile ? tile.span : ''}`}>
           <dt className="text-xs font-semibold uppercase tracking-wide text-secondary-500">
             {tile.label}
           </dt>
-          <dd className={`tabular mt-1 text-2xl font-semibold ${tile.tone}`}>{tile.value}</dd>
+          <dd className={`tabular mt-1 text-xl font-semibold sm:text-2xl ${tile.tone}`}>
+            {tile.value}
+          </dd>
         </div>
       ))}
     </dl>

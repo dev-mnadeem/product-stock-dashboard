@@ -31,7 +31,7 @@
 
   .field-input {
     @apply w-full rounded-lg border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900
-      placeholder:text-secondary-400 focus:border-primary-400;
+      placeholder:text-secondary-500 focus:border-primary-500;
   }
 
   .field-input-invalid {

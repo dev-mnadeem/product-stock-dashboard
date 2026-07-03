@@ -253,7 +253,7 @@ export default function NewProductPage() {
 
           <div>
             <label htmlFor="imageUrl" className="field-label mb-1">
-              Image URL <span className="normal-case text-secondary-400">(optional)</span>
+              Image URL <span className="normal-case text-secondary-500">(optional)</span>
             </label>
             <input
               id="imageUrl"

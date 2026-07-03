@@ -87,7 +87,7 @@ export function ProductTable({
                         <span className="tabular text-sm font-semibold text-error-600">
                           {formatPrice(clearancePrice)}
                         </span>
-                        <span className="tabular text-xs text-secondary-400 line-through">
+                        <span className="tabular text-xs text-secondary-500 line-through">
                           {formatPrice(product.price)}
                         </span>
                       </span>

@@ -46,7 +46,7 @@ export function ProductCard({ product, pending, onAdjustStock }: ProductCardProp
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="truncate text-base font-semibold text-secondary-900">
+          <h3 className="line-clamp-2 text-base font-semibold text-secondary-900">
             {product.name}
           </h3>
           <StockBadge stock={product.stock} className="shrink-0" />

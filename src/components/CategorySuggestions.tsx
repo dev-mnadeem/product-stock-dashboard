@@ -43,7 +43,7 @@ export function CategorySuggestions({
             }`}
           >
             {suggestion.category}
-            <span className="tabular text-secondary-400">
+            <span className="tabular text-secondary-500">
               {Math.round(suggestion.confidence * 100)}%
             </span>
           </button>
