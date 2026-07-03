@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     image: stock-desk:local
-    container_name: stock-desk
     ports:
       - '${WEB_PORT:-3000}:3000'
     environment:

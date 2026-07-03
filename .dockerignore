@@ -5,6 +5,10 @@ node_modules
 docs/screenshots
 npm-debug.log*
 .env
-.env.local
+.env.*
+!.env.example
 coverage
 __tests__
+project_venv
+*.tsbuildinfo
+next-env.d.ts
