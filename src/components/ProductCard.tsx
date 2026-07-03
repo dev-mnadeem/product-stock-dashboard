@@ -3,29 +3,25 @@
 import Image from 'next/image'
 import { CategoryGlyph } from '@/components/CategoryGlyph'
 import { StockBadge } from '@/components/StockBadge'
-import { Button } from '@/components/ui/Button'
-import { isOutOfStock } from '@/domain/stock'
+import { StockStepper } from '@/components/StockStepper'
 import type { Product } from '@/types/product'
-import { calculateDiscount, formatPrice, formatQuantity } from '@/utils/formatters'
+import { calculateDiscount, formatPrice } from '@/utils/formatters'
 
 interface ProductCardProps {
   product: Product
+  pending: boolean
+  onAdjustStock: (id: string, delta: number) => void
 }
 
-/** Merchandising view of a single SKU, used by the grid layout. */
-export function ProductCard({ product }: ProductCardProps) {
-  const unavailable = isOutOfStock(product)
+/**
+ * Grid view of a single SKU. It carries the same stepper as the table row, so
+ * switching layouts never takes away the one write the screen offers.
+ */
+export function ProductCard({ product, pending, onAdjustStock }: ProductCardProps) {
   const clearancePrice =
     product.clearancePercent && product.clearancePercent > 0
       ? calculateDiscount(product.price, product.clearancePercent)
       : null
-
-  const handleAddToCart = () => {
-    if (unavailable) {
-      return
-    }
-    console.log('Add to cart:', product.id)
-  }
 
   return (
     <article className="surface flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
@@ -60,14 +56,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <dl className="flex items-center justify-between text-sm">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-secondary-400">Category</dt>
+            <dt className="text-xs uppercase tracking-wide text-secondary-500">Category</dt>
             <dd className="font-medium text-secondary-700">{product.category}</dd>
           </div>
           <div className="text-right">
-            <dt className="text-xs uppercase tracking-wide text-secondary-400">Stock</dt>
-            <dd className="tabular font-medium text-secondary-700">
-              {formatQuantity(product.stock)}
-            </dd>
+            <dt className="text-xs uppercase tracking-wide text-secondary-500">SKU</dt>
+            <dd className="font-mono text-xs text-secondary-600">{product.sku}</dd>
           </div>
         </dl>
 
@@ -78,7 +72,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="tabular text-lg font-bold text-error-600">
                   {formatPrice(clearancePrice)}
                 </span>
-                <span className="tabular text-sm text-secondary-400 line-through">
+                <span className="tabular text-sm text-secondary-500 line-through">
                   {formatPrice(product.price)}
                 </span>
               </>
@@ -88,28 +82,7 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
-          <span className="font-mono text-xs text-secondary-400">SKU: {product.sku}</span>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="primary"
-            className="flex-1"
-            disabled={unavailable}
-            aria-disabled={unavailable}
-            onClick={handleAddToCart}
-          >
-            {unavailable ? 'Out of Stock' : 'Add to Cart'}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => console.log('View details:', product.id)}
-            aria-label={`View details for ${product.name}`}
-          >
-            Details
-          </Button>
+          <StockStepper product={product} pending={pending} onAdjust={onAdjustStock} />
         </div>
       </div>
     </article>

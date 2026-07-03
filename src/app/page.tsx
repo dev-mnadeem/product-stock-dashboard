@@ -151,7 +151,12 @@ export default function InventoryPage() {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {page.items.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                pending={pendingAdjustmentIds.includes(product.id)}
+                onAdjustStock={adjustStock}
+              />
             ))}
           </div>
         )}
