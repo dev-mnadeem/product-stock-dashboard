@@ -26,11 +26,11 @@ const productSchema = z.object({
     .max(500, 'Keep the description under 500 characters'),
   category: z.string().min(1, 'Pick a category'),
   price: z
-    .number({ invalid_type_error: 'Price must be a number' })
+    .number({ error: 'Price must be a number' })
     .min(0.01, 'Price must be greater than 0')
     .max(APP_CONFIG.maxPrice, 'Price is above the catalogue limit'),
   stock: z
-    .number({ invalid_type_error: 'Stock must be a number' })
+    .number({ error: 'Stock must be a number' })
     .int('Stock must be a whole number')
     .min(0, 'Stock cannot be negative'),
   sku: z
@@ -40,8 +40,7 @@ const productSchema = z.object({
     .max(20, 'Keep the SKU under 20 characters')
     .regex(/^[A-Za-z0-9-]+$/, 'SKU may only contain letters, numbers and hyphens'),
   imageUrl: z
-    .string()
-    .url('Enter a full URL, or leave this blank')
+    .url({ protocol: /^https?$/, error: 'Enter a full http(s) URL, or leave this blank' })
     .optional()
     .or(z.literal('')),
 })
