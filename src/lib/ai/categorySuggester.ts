@@ -320,17 +320,25 @@ export function parseModelReply(reply: string): CategorySuggestion[] {
     }))
 }
 
+/**
+ * A suggestion is only useful while the person is still filling in the form, so
+ * a slow endpoint is abandoned and the lexical answer is used instead.
+ */
+const MODEL_TIMEOUT_MS = 8000
+
 /** OpenAI-compatible HTTP completer. Any base URL speaking that shape works. */
 export class HttpChatCompleter implements ChatCompleter {
   constructor(
     private readonly apiKey: string,
     private readonly baseUrl: string,
-    private readonly model: string
+    private readonly model: string,
+    private readonly timeoutMs: number = MODEL_TIMEOUT_MS
   ) {}
 
   async complete(prompt: string): Promise<string> {
     const response = await fetch(`${this.baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
+      signal: AbortSignal.timeout(this.timeoutMs),
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
