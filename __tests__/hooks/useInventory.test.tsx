@@ -96,6 +96,49 @@ describe('useInventory', () => {
     expect(result.current.summary).toEqual(before)
   })
 
+  it('keeps a write on another row when a slower one is refused', async () => {
+    api.listProducts.mockResolvedValue(
+      pageOf([product(), product({ id: 'p-2', sku: 'CYM-015', stock: 20 })])
+    )
+
+    let refuseFirst: (reason: unknown) => void = () => {}
+    api.adjustStock.mockImplementation(({ id }: { id: string }) =>
+      id === 'p-1'
+        ? new Promise((_resolve, reject) => {
+            refuseFirst = reject
+          })
+        : Promise.resolve({
+            success: true,
+            data: product({ id: 'p-2', sku: 'CYM-015', stock: 21 }),
+          })
+    )
+
+    const { result } = renderHook(() => useInventory())
+    await waitFor(() => expect(result.current.summary?.unitCount).toBe(30))
+
+    let slowWrite: Promise<void> = Promise.resolve()
+    act(() => {
+      slowWrite = result.current.adjustStock('p-1', -1)
+    })
+    await act(async () => {
+      await result.current.adjustStock('p-2', 1)
+    })
+
+    expect(result.current.pendingAdjustmentIds).toEqual(['p-1'])
+
+    await act(async () => {
+      refuseFirst(new ApiException('INSUFFICIENT_STOCK', 'refused'))
+      await slowWrite
+    })
+
+    const stockById = Object.fromEntries(
+      result.current.page.items.map((item) => [item.id, item.stock])
+    )
+    expect(stockById).toEqual({ 'p-1': 10, 'p-2': 21 })
+    expect(result.current.summary?.unitCount).toBe(31)
+    expect(result.current.pendingAdjustmentIds).toEqual([])
+  })
+
   it('surfaces a friendly message when the catalogue cannot be read', async () => {
     api.listProducts.mockRejectedValue(new Error('boom'))
 

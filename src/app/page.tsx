@@ -23,7 +23,7 @@ export default function InventoryPage() {
     loading,
     error,
     adjustmentError,
-    pendingAdjustmentId,
+    pendingAdjustmentIds,
     setSearchTerm,
     setQuery,
     resetQuery,
@@ -145,7 +145,7 @@ export default function InventoryPage() {
         ) : view === 'table' ? (
           <ProductTable
             products={page.items}
-            pendingAdjustmentId={pendingAdjustmentId}
+            pendingAdjustmentIds={pendingAdjustmentIds}
             onAdjustStock={adjustStock}
           />
         ) : (

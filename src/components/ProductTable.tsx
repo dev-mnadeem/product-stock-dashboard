@@ -8,7 +8,7 @@ import { calculateDiscount, formatDate, formatPrice, truncateText } from '@/util
 
 interface ProductTableProps {
   products: Product[]
-  pendingAdjustmentId: string | null
+  pendingAdjustmentIds: string[]
   onAdjustStock: (id: string, delta: number) => void
 }
 
@@ -18,7 +18,7 @@ const HEAD_CELL =
 /** The default inventory view: one row per SKU, editable on the spot. */
 export function ProductTable({
   products,
-  pendingAdjustmentId,
+  pendingAdjustmentIds,
   onAdjustStock,
 }: ProductTableProps) {
   return (
@@ -103,7 +103,7 @@ export function ProductTable({
                   <td className="whitespace-nowrap px-5 py-3 text-right">
                     <StockStepper
                       product={product}
-                      pending={pendingAdjustmentId === product.id}
+                      pending={pendingAdjustmentIds.includes(product.id)}
                       onAdjust={onAdjustStock}
                     />
                   </td>

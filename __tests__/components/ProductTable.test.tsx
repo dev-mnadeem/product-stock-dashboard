@@ -15,12 +15,12 @@ const product = (overrides: Partial<Product> = {}): Product => ({
   ...overrides,
 })
 
-const renderTable = (products: Product[], pendingAdjustmentId: string | null = null) => {
+const renderTable = (products: Product[], pendingAdjustmentIds: string[] = []) => {
   const onAdjustStock = jest.fn()
   render(
     <ProductTable
       products={products}
-      pendingAdjustmentId={pendingAdjustmentId}
+      pendingAdjustmentIds={pendingAdjustmentIds}
       onAdjustStock={onAdjustStock}
     />
   )
@@ -73,7 +73,7 @@ describe('ProductTable', () => {
   })
 
   it('locks both steppers while an adjustment is in flight', () => {
-    renderTable([product()], 'p-1')
+    renderTable([product()], ['p-1'])
 
     expect(screen.getByRole('button', { name: /receive one unit/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /ship one unit/i })).toBeDisabled()

@@ -40,7 +40,8 @@ export interface UseInventoryResult {
   loading: boolean
   error: string | null
   adjustmentError: string | null
-  pendingAdjustmentId: string | null
+  /** Rows with a stock write in flight. Their steppers stay locked until it settles. */
+  pendingAdjustmentIds: string[]
   setSearchTerm: (value: string) => void
   setQuery: (patch: Partial<ProductQuery>) => void
   resetQuery: () => void
@@ -62,7 +63,7 @@ export function useInventory(): UseInventoryResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [adjustmentError, setAdjustmentError] = useState<string | null>(null)
-  const [pendingAdjustmentId, setPendingAdjustmentId] = useState<string | null>(null)
+  const [pendingAdjustmentIds, setPendingAdjustmentIds] = useState<string[]>([])
   const [reloadToken, setReloadToken] = useState(0)
 
   const debouncedSearch = useDebouncedValue(searchTerm, APP_CONFIG.searchDebounceMs)
@@ -126,40 +127,45 @@ export function useInventory(): UseInventoryResult {
 
   /**
    * Optimistic stock edit. The row moves immediately, and if the repository
-   * refuses — an oversell, a vanished SKU — the previous page and summary are
-   * put back exactly as they were and the reason is surfaced inline.
+   * refuses — an oversell, a vanished SKU — that row and its share of the
+   * summary are put back and the reason is surfaced inline. Only the affected
+   * row is touched, so a refusal never undoes a write on another row that
+   * landed in the meantime.
    */
   const adjustStock = useCallback(
     async (id: string, delta: number) => {
-      setAdjustmentError(null)
-      setPendingAdjustmentId(id)
-
-      const previousPage = page
-      const previousSummary = summary
-
-      const optimisticItems = previousPage.items.map((product) =>
-        product.id === id ? { ...product, stock: Math.max(0, product.stock + delta) } : product
-      )
-      setPage({ ...previousPage, items: optimisticItems })
-      if (previousSummary) {
-        setSummary(recomputeSummary(previousSummary, previousPage.items, optimisticItems))
+      const original = page.items.find((product) => product.id === id)
+      if (!original) {
+        return
       }
+      const optimistic = { ...original, stock: Math.max(0, original.stock + delta) }
+
+      const replaceRow = (next: Product) =>
+        setPage((current) => ({
+          ...current,
+          items: current.items.map((product) => (product.id === id ? next : product)),
+        }))
+      const shiftSummary = (from: Product, to: Product) =>
+        setSummary((current) => current && recomputeSummary(current, [from], [to]))
+
+      setAdjustmentError(null)
+      setPendingAdjustmentIds((ids) => [...ids, id])
+      replaceRow(optimistic)
+      shiftSummary(original, optimistic)
 
       try {
         const response = await requestStockAdjustment({ id, delta })
-        setPage((current) => ({
-          ...current,
-          items: current.items.map((product) => (product.id === id ? response.data : product)),
-        }))
+        replaceRow(response.data)
+        shiftSummary(optimistic, response.data)
       } catch (err) {
-        setPage(previousPage)
-        setSummary(previousSummary)
+        replaceRow(original)
+        shiftSummary(optimistic, original)
         setAdjustmentError(toUserMessage(err, 'The stock change could not be saved.'))
       } finally {
-        setPendingAdjustmentId(null)
+        setPendingAdjustmentIds((ids) => ids.filter((pendingId) => pendingId !== id))
       }
     },
-    [page, summary]
+    [page.items]
   )
 
   // The summary is derived from the full catalogue, not the visible page, so
@@ -190,7 +196,7 @@ export function useInventory(): UseInventoryResult {
     loading,
     error,
     adjustmentError,
-    pendingAdjustmentId,
+    pendingAdjustmentIds,
     setSearchTerm,
     setQuery,
     resetQuery,
