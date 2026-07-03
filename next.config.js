@@ -6,9 +6,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Keeps the dev overlay badge out of captured screenshots.
   devIndicators: false,
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
   images: {
     // `images.domains` is deprecated; remotePatterns is the supported form.
     remotePatterns: [
