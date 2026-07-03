@@ -6,14 +6,23 @@ unit without leaving the row.
 
 ![Inventory table with summary tiles, filters and per-row stock steppers](docs/screenshots/inventory-table.png)
 
-Built with Next.js 15 (App Router), React 18, TypeScript and Tailwind. The catalogue is
-served by an in-memory repository, so the app runs with no database and no API key.
+Built with Next.js 15.5 (App Router), React 19, TypeScript, Tailwind 3 and zod 4. The
+catalogue is an in-memory demo repository, so the app runs with no database and no API
+key.
 
 ## Run it
 
+With Docker, nothing else installed:
+
 ```bash
-npm install
-npm run dev          # http://localhost:3000
+docker compose up --build     # http://localhost:3000
+```
+
+Or with Node 22 (`.nvmrc`):
+
+```bash
+npm ci
+npm run dev                   # http://localhost:3000
 ```
 
 Other commands:
@@ -21,13 +30,14 @@ Other commands:
 ```bash
 npm test             # Jest + React Testing Library
 npm run type-check   # tsc --noEmit
-npm run lint         # next lint
+npm run lint         # ESLint 9, flat config in eslint.config.mjs
 npm run format       # prettier --write .
 npm run build        # production build (standalone output)
 ```
 
-Node 20 or newer. No environment variables are required; `.env.example` lists the three
-optional ones.
+No environment variables are required; `.env.example` lists the three optional ones. The
+build downloads IBM Plex once through `next/font`, which then serves it from the app
+itself, so `npm run build` and the Docker build need network access to Google Fonts.
 
 ## What is on the screen
 
@@ -43,7 +53,15 @@ reorder point of 5 units (`src/config/app.ts`). Both thresholds come from one fu
 Above the table: a search box over name, SKU, description and category, debounced by
 250 ms so a typed word costs one read rather than one per keystroke; sort by name, price,
 units or last-updated; and a table/grid toggle. Below it: category, price-range and
-availability filters, and pagination at eight rows a page.
+availability filters, and pagination at eight rows a page. The grid shows the same page as
+cards, each with the same receive/ship stepper as its table row.
+
+![Grid view with a stock stepper on every card](docs/screenshots/inventory-grid.png)
+
+On a phone the summary tiles and filters fold into two columns and the table scrolls
+sideways inside its own frame rather than the page.
+
+<img src="docs/screenshots/inventory-mobile.png" alt="Inventory screen at phone width" width="300">
 
 Quantities and prices both go through `Intl` (`src/utils/formatters.ts`). A four-digit
 count renders as `1,240`, not `1240`.
@@ -51,8 +69,9 @@ count renders as `1,240`, not `1240`.
 ## Adjusting stock without a spinner
 
 The `−` and `+` buttons in each row write straight through. The row updates before the
-request resolves, and if the data layer refuses the change, the previous row _and_ the
-summary tiles are put back exactly as they were, with the reason shown in a banner.
+request resolves, and if the data layer refuses the change, that row _and_ its share of
+the summary tiles are put back, with the reason shown in a banner. Only the refused row is
+reverted: a write on another row that landed in the meantime stays.
 
 ```mermaid
 stateDiagram-v2
@@ -60,22 +79,22 @@ stateDiagram-v2
     Settled --> Optimistic: receive or ship one unit
     note right of Optimistic
         The row shows the new count at once
-        and both steppers lock
+        and that row's stepper locks
     end note
     Optimistic --> Settled: repository accepts and returns the stored product
     Optimistic --> Reverted: repository raises INSUFFICIENT_STOCK or NOT_FOUND
     note left of Reverted
-        Page and summary are restored to the
-        values captured before the request
+        The row and its share of the summary
+        go back to the values before the request
     end note
     Reverted --> Settled: banner dismissed
 ```
 
 The refusal is a real one, not a simulated failure: `adjustStock` rejects any change that
 would take a count below zero, so shipping 50 units of a SKU with 10 on hand raises
-`INSUFFICIENT_STOCK` and the row snaps back. Three tests in
-`__tests__/hooks/useInventory.test.tsx` cover the accept path, the rollback and the
-summary restore.
+`INSUFFICIENT_STOCK` and the row snaps back. Tests in
+`__tests__/hooks/useInventory.test.tsx` cover the accept path, the rollback, the summary
+restore and a refusal that arrives after a write on another row has already succeeded.
 
 ## Where the rules live
 
@@ -147,14 +166,38 @@ classDiagram
 
 With no `AI_API_KEY` set — the default — `createCategorySuggester` returns
 `LexicalCategorySuggester`, which scores each category by how many of its terms appear in
-the text, weighting a name match double. It is offline and deterministic: the same input
-gives the same answer on every run, and there is a test asserting that.
+the text as whole words (plurals included), weighting a name match double. Whole words
+matter: "gift card" is not a car part and "steel" is not a tee. It is offline and
+deterministic: the same input gives the same answer on every run, and there is a test
+asserting that.
 
 Set `AI_API_KEY` (plus an optional `AI_BASE_URL` and `AI_MODEL` for any OpenAI-compatible
 endpoint) and `ModelCategorySuggester` takes over. It constrains the model to the eight
-catalogue categories, and on _any_ failure — timeout, HTTP error, unparseable reply, a
-category that does not exist — it returns the lexical answer instead of an error. The
-call happens in a route handler, so the key never reaches the browser.
+catalogue categories, and on _any_ failure — no answer within eight seconds, HTTP error,
+unparseable reply, a category that does not exist — it returns the lexical answer instead
+of an error. The call happens in a route handler, so the key never reaches the browser.
+
+The route, with the default offline suggester, from the Compose container:
+
+```bash
+curl -s -X POST localhost:3000/api/suggest-category -H 'Content-Type: application/json' \
+  -d '{"name":"Cork yoga mat","description":"Natural cork training mat with a non-slip rubber base"}'
+```
+
+```json
+{
+  "provider": "lexical",
+  "suggestions": [
+    {
+      "category": "Sports",
+      "confidence": 0.83,
+      "reason": "matched \"yoga\", \"training\", \"mat\""
+    }
+  ]
+}
+```
+
+A body that is not JSON gets `400 {"error":"Request body must be JSON"}`.
 
 ## The catalogue
 
@@ -163,9 +206,12 @@ deliberate: two sit at zero, four sit at or under the reorder point, and one car
 four-digit cover, so every stock state and the thousands separator are visible on the
 first screen without editing any data.
 
-Writes land in process memory. They survive navigation but not a server restart.
+The pages are client components that call the repository directly, so the catalogue the
+screens work on lives in the browser tab. Writes survive moving between Inventory and Add
+product, and are gone on reload. Two tabs do not see each other's edits.
 
-`GET /api/health` reports liveness and reads through the data layer:
+`GET /api/health` reports liveness and reads through the same repository code, but on the
+server, so it always reports the seeded catalogue:
 
 ```json
 { "status": "ok", "catalogue": { "skuCount": 24, "unitCount": 3603 } }
@@ -177,11 +223,13 @@ Writes land in process memory. They survive navigation but not a server restart.
 npm test
 ```
 
-**116 tests across 13 suites, all passing.** They cover the stock classifier and its
+**127 tests across 15 suites, all passing.** They cover the stock classifier and its
 boundaries, the query predicate (price bounds are inclusive, both directions of the
 availability filter, search across SKU), sorting and paging, the repository's validation
-and its refusal to oversell, the optimistic-write rollback, the category suggester and
-its fallback, and the table, filter, toolbar and pagination components.
+and its refusal to oversell, the optimistic-write rollback, the category suggester, its
+whole-word matching, its HTTP adapter and timeout fallback, the add-product form's
+validation and submit paths, and the table, card, filter, toolbar and pagination
+components. The suite needs no network.
 
 ## Container
 
@@ -191,22 +239,31 @@ WEB_PORT=8080 docker compose up --build
 ```
 
 The image is a three-stage build on `node:22-alpine`: install, build, then a runtime stage
-that copies only Next's standalone server output and runs as an unprivileged `nextjs`
-user. `docker compose config` validates. The image has **not** been built or booted on
-this machine — Docker Desktop is off here — so treat the Dockerfile as reviewed, not
-proven.
+that copies only Next's standalone server output (about 350 MB in all) and runs as the
+unprivileged `nextjs` user (uid 1001). The container has a health check against
+`/api/health`; `docker compose up --build` brings it to `healthy` in a few seconds.
+
+## Look
+
+Pine green and warm stone with an amber mark, set in IBM Plex Sans and IBM Plex Mono
+(SKUs). Status colours carry a label and a dot as well as a hue, every focusable control
+shows the same focus ring, and secondary text clears WCAG AA contrast on white.
 
 ## Things this does not do
 
-- **The catalogue is in-memory.** Restarting the server resets every write. The
-  `ProductRepository` interface is the seam a real backend would slot into.
-- **No pagination server-side.** `queryProducts` filters and slices a plain array. That is
+- **No shared store.** The catalogue is held in the browser tab, so a reload resets every
+  write and no two people see the same stock. The `ProductRepository` interface is the
+  seam an HTTP or SQL adapter would slot into.
+- **No paging in a backend.** `queryProducts` filters and slices a plain array. That is
   honest for 24 rows and wrong for 24,000 — the page window and total are already in the
   response shape, so the change is contained to the adapter.
 - **No row virtualisation.** Eight rows a page keeps the DOM small instead.
 - **No editing or deleting from the table.** The repository supports `update` and `remove`
   and both are tested, but the only write wired to the UI is the one-unit stock
   adjustment.
-- **The grid card's "Add to Cart" and "Details" buttons are stubs** that log to the
-  console. The grid is a merchandising preview, not a storefront.
-- **No auth.** Anyone who can reach the app can change stock levels.
+- **No auth.** Harmless while edits stay in the visitor's own tab; a shared backend would
+  need it first.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

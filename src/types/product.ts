@@ -40,8 +40,8 @@ export type SortDirection = 'asc' | 'desc'
 
 /**
  * A full read request against the catalogue: filters, free-text search,
- * ordering and a page window. The same shape is understood by the repository
- * and by the URL query string, so a view is shareable.
+ * ordering and a page window. The hook builds it and the repository answers
+ * it, so the UI never filters or sorts on its own.
  */
 export interface ProductQuery extends FilterOptions {
   search?: string
