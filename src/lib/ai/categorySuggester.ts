@@ -155,6 +155,27 @@ const LEXICON: Record<ProductCategory, string[]> = {
 
 const MAX_SUGGESTIONS = 3
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+interface TermPattern {
+  term: string
+  pattern: RegExp
+}
+
+/**
+ * Terms match whole words (with an optional plural), so "car" does not fire on
+ * "card" or "scarf", "tee" on "steel", or "mat" on "material".
+ */
+const TERM_PATTERNS = Object.fromEntries(
+  PRODUCT_CATEGORIES.map((category) => [
+    category,
+    LEXICON[category].map((term) => ({
+      term,
+      pattern: new RegExp(`\\b${escapeRegExp(term)}(?:e?s)?\\b`),
+    })),
+  ])
+) as Record<ProductCategory, TermPattern[]>
+
 /**
  * Deterministic default. Scores each category by how many of its terms appear
  * in the product text, weighting the name over the description because a name
@@ -176,11 +197,16 @@ export class LexicalCategorySuggester implements CategorySuggester {
     }
 
     const scored = PRODUCT_CATEGORIES.map((category) => {
-      const hits = LEXICON[category].filter(
-        (term) => nameText.includes(term) || bodyText.includes(term)
-      )
-      const nameHits = hits.filter((term) => nameText.includes(term))
-      const score = nameHits.length * 2 + (hits.length - nameHits.length)
+      let nameHits = 0
+      const hits: string[] = []
+      for (const { term, pattern } of TERM_PATTERNS[category]) {
+        const inName = pattern.test(nameText)
+        if (inName || pattern.test(bodyText)) {
+          hits.push(term)
+          nameHits += inName ? 1 : 0
+        }
+      }
+      const score = nameHits * 2 + (hits.length - nameHits)
       return { category, score, hits }
     }).filter((entry) => entry.score > 0)
 

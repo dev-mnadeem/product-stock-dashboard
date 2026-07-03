@@ -40,6 +40,24 @@ describe('LexicalCategorySuggester', () => {
     ).resolves.toEqual([])
   })
 
+  it('matches whole words, not fragments inside other words', async () => {
+    const result = await suggester.suggest({
+      name: 'Steel gift card holder',
+      description: 'Brushed material with a scarf clip',
+    })
+
+    const categories = result.map((entry) => entry.category)
+    expect(categories).not.toContain('Automotive')
+    expect(categories).not.toContain('Clothing')
+    expect(categories).not.toContain('Sports')
+  })
+
+  it('still counts plural forms of a term', async () => {
+    const [top] = await suggester.suggest({ name: 'Wool Socks', description: 'Three pairs' })
+    expect(top.category).toBe('Clothing')
+    expect(top.reason).toContain('"socks"')
+  })
+
   it('is deterministic across calls', async () => {
     const input = { name: 'Cork Yoga Mat', description: 'Non-slip training mat' }
     await expect(suggester.suggest(input)).resolves.toEqual(await suggester.suggest(input))
