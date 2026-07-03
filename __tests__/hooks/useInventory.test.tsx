@@ -8,7 +8,6 @@ jest.mock('@/lib/api', () => ({
   adjustStock: jest.fn(),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const api = jest.requireMock('@/lib/api') as {
   listProducts: jest.Mock
   adjustStock: jest.Mock
