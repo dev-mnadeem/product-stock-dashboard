@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-secondary-50 text-secondary-900 antialiased;
+  }
+
+  /* Every focusable element gets the same visible ring. */
+  :where(a, button, input, select, textarea):focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-white;
+  }
+
+  /* Hide the spin buttons on quantity fields so the stepper is the only control. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@layer components {
+  .field-label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-secondary-500;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900
+      placeholder:text-secondary-400 focus:border-primary-400;
+  }
+
+  .field-input-invalid {
+    @apply border-error-400 focus:border-error-500;
+  }
+
+  .surface {
+    @apply rounded-xl border border-secondary-200 bg-white shadow-card;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
