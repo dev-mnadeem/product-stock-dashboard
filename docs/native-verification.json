@@ -1,5 +1,6 @@
 {
   "suggestions": 1,
   "provider": "lexical",
-  "catalogue": "browser-local fixture"
+  "catalogue": "browser-local fixture",
+  "form": "empty submission rejected, valid product saved"
 }

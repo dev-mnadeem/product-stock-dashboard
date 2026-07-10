@@ -217,3 +217,7 @@ The production build was opened on the products screen, and its category endpoin
 returned a lexical suggestion without a model key.
 [Native products view](docs/screenshots/native-products.png) ·
 [Verification record](docs/native-verification.json). Use Node.js 22.12 or newer.
+
+## Author
+
+[**Muhammad Nadeem**](https://github.com/dev-mnadeem)
