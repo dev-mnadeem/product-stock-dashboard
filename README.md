@@ -210,3 +210,10 @@ proven.
 - **The grid card's "Add to Cart" and "Details" buttons are stubs** that log to the
   console. The grid is a merchandising preview, not a storefront.
 - **No auth.** Anyone who can reach the app can change stock levels.
+
+## Running check
+
+The production build was opened on the products screen, and its category endpoint
+returned a lexical suggestion without a model key.
+[Native products view](docs/screenshots/native-products.png) ·
+[Verification record](docs/native-verification.json). Use Node.js 22.12 or newer.
